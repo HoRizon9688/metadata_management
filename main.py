@@ -9,19 +9,38 @@ cursor = conn.cursor()
 
 
 def schema_update_charset(charset, schema_id, conn, cursor):
-    sql = "UPDATE `schema` set character_set='{}' where schema_id = '{}'".format(charset, schema_id)
+    sql = "UPDATE `schema` set character_set = '{}' where schema_id = '{}'".format(charset, schema_id)
     cursor.execute(sql)
     conn.commit()
 
 
 def schema_update_collation(collation, schema_id, conn, cursor):
-    sql = "UPDATE `schema` set collation='{}' where schema_id = '{}'".format(collation, schema_id)
+    sql = "UPDATE `schema` set collation = '{}' where schema_id = '{}'".format(collation, schema_id)
+    cursor.execute(sql)
+    conn.commit()
+
+
+def table_update_name(table_name, table_id, conn, cursor):
+    sql = "UPDATE `table` set table_name = '{}' where table_id = '{}'".format(table_name, table_id)
+    cursor.execute(sql)
+    conn.commit()
+
+
+def table_update_collation(collation, table_id, conn, cursor):
+    sql = "UPDATE `table` set collation = '{}' where table_id = '{}'".format(collation, table_id)
     cursor.execute(sql)
     conn.commit()
 
 
 def get_schema(cursor):
     sql = "select * from `schema`"
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return result
+
+
+def get_table(cursor):
+    sql = "select * from `table`"
     cursor.execute(sql)
     result = cursor.fetchall()
     return result
@@ -76,9 +95,9 @@ while True:
             if ev1 == '查看元数据':
                 window1['result'].update('')
                 output = get_schema(cursor)
-                print("schema_id      schema_name      character_set      collation")
+                print("schema_id      schema_name      character_set      collation\n")
                 for i in output:
-                    print("{:^20}{:^20}{:^20}{:^20}".format(i[0], i[1], i[2], i[3]))
+                    print(i)
             if ev1 == '新建数据库':
                 window1['result'].update('')
                 if val1['win1_input']:
@@ -96,7 +115,7 @@ while True:
                     conn.commit()
 
     if event == 'Function2':
-        layout2 = [[sg.Input(key='win1_input')],
+        layout2 = [[sg.Input(key='win2_input')],
                    [sg.Button('修改表名'), sg.Button('修改排序方式'), sg.Button('查看元数据')],
                    [sg.Output(key='result', size=(200, 400))]]
         window2 = sg.Window('Window2', layout2, size=(400, 400))
@@ -104,6 +123,44 @@ while True:
             ev2, val2 = window2.read()
             if ev2 == sg.WINDOW_CLOSED:
                 break
+            if ev2 == "修改表名":
+                window2['result'].update('')
+                if val2['win2_input']:
+                    win2_input = val2['win2_input']
+                    table_name, table_id = win2_input.split(' ')
+                    cursor.execute("select table_name from `table` where table_id = '{}'".format(table_id))
+                    old_name = cursor.fetchone()
+                    cursor.execute("select schema_name from `table` where table_id = '{}'".format(table_id))
+                    schema_name = cursor.fetchone()
+                    table_update_name(table_name, table_id, conn, cursor)
+                    cursor.execute("use {}".format(schema_name[0]))
+                    cursor.execute("alter table {} rename to {}".format(old_name[0], table_name))
+                    conn.commit()
+                    cursor.execute("use metadata")
+                    print("修改成功")
+            if ev2 == "修改排序方式":
+                window2['result'].update('')
+                if val2['win2_input']:
+                    win2_input = val2['win2_input']
+                    collation, table_id = win2_input.split(' ')
+                    table_update_collation(collation, table_id, conn, cursor)
+                    cursor.execute("select table_name from `table` where table_id = '{}'".format(table_id))
+                    table_name = cursor.fetchone()
+                    cursor.execute("select schema_name from `table` where table_id = '{}'".format(table_id))
+                    schema_name = cursor.fetchone()
+                    cursor.execute("use {}".format(schema_name[0]))
+                    cursor.execute("alter table {} default collate {}".format(table_name[0], collation))
+                    conn.commit()
+                    cursor.execute("use metadata")
+                    print("修改成功")
+            if ev2 == "查看元数据":
+                window2['result'].update('')
+                output = get_table(cursor)
+                print("table_id      table_name      schema_name      rows     collation\n")
+                for i in output:
+                    print(i)
+
+
 # Finish up by removing from the screen
 window.close()
 conn.close()
