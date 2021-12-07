@@ -57,16 +57,21 @@ while True:
                 if val1['win1_input']:
                     win1_input = val1['win1_input']
                     charset, schema_id = win1_input.split(' ')
-                    print(charset, schema_id)
                     schema_update_charset(charset, schema_id, conn, cursor)
+                    cursor.execute("select schema_name from `schema` where schema_id='{}'".format(schema_id))
+                    schema_name = cursor.fetchone()
+                    cursor.execute("alter database {} default character set {}".format(schema_name[0], charset))
+                    conn.commit()
                     print("修改成功")
             if ev1 == '修改排序方式':
                 window1['result'].update('')
                 if val1['win1_input']:
                     win1_input = val1['win1_input']
                     collation, schema_id = win1_input.split(' ')
-                    print(collation, schema_id)
                     schema_update_collation(collation, schema_id, conn, cursor)
+                    cursor.execute("select schema_name from `schema` where schema_id='{}'".format(schema_id))
+                    schema_name = cursor.fetchone()
+                    cursor.execute("alter database {} default collate {}".format(schema_name[0], collation))
                     print("修改成功")
             if ev1 == '查看元数据':
                 window1['result'].update('')
