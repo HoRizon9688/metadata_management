@@ -8,14 +8,14 @@ conn = pymysql.connect(host='localhost',
 cursor = conn.cursor()
 
 
-def schema_update_charset(charset, conn, cursor):
-    sql = "UPDATE `schema` set character_set='{}'".format(charset)
+def schema_update_charset(charset, schema_id, conn, cursor):
+    sql = "UPDATE `schema` set character_set='{}' where schema_id = '{}'".format(charset, schema_id)
     cursor.execute(sql)
     conn.commit()
 
 
-def schema_update_collation(collation, conn, cursor):
-    sql = "UPDATE `schema` set collation='{}'".format(collation)
+def schema_update_collation(collation, schema_id, conn, cursor):
+    sql = "UPDATE `schema` set collation='{}' where schema_id = '{}'".format(collation, schema_id)
     cursor.execute(sql)
     conn.commit()
 
@@ -47,14 +47,18 @@ while True:
             if ev1 == '修改字符集':
                 window1['result'].update('')
                 if val1['win1_input']:
-                    charset = val1['win1_input']
-                    schema_update_charset(charset, conn, cursor)
+                    win1_input = val1['win1_input']
+                    charset, schema_id = win1_input.split(' ')
+                    print(charset, schema_id)
+                    schema_update_charset(charset, schema_id, conn, cursor)
                     print("修改成功")
             if ev1 == '修改排序方式':
                 window1['result'].update('')
                 if val1['win1_input']:
-                    collation = val1['win1_input']
-                    schema_update_collation(collation, conn, cursor)
+                    win1_input = val1['win1_input']
+                    collation, schema_id = win1_input.split(' ')
+                    print(collation, schema_id)
+                    schema_update_collation(collation, schema_id, conn, cursor)
                     print("修改成功")
             if ev1 == '查看元数据':
                 window1['result'].update('')
