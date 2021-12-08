@@ -399,7 +399,7 @@ while True:
                                 filed_null,
                                 filed_key,
                                 filed_default)
-                            print(sql)
+                            # print(sql)
                         else:
                             if filed_default:
                                 sql = "insert into `filed` (filed_id, filed_name, schema_name, table_name, `type`, `null`, `key`, `default`) values ({},'{}','{}','{}','{}','{}','{}',{})".format(
@@ -411,7 +411,7 @@ while True:
                                     filed_null,
                                     filed_key,
                                     filed_default)
-                                print(sql)
+                                # print(sql)
                             else:
                                 sql = "insert into `filed` (filed_id, filed_name, schema_name, table_name, `type`, `null`, `key`) values ({},'{}','{}','{}','{}','{}','{}')".format(
                                     filed_id,
@@ -421,10 +421,27 @@ while True:
                                     filed_type,
                                     filed_null,
                                     filed_key)
-                                print(sql)
-
+                                # print(sql)
+                        cursor.execute(sql)
+                        conn.commit()
+                        if filed_length is None or filed_length == '':
+                            sql = "alter table {} add {} {}".format(table_name, filed_name, filed_type)
+                            if filed_default:
+                                sql = sql + ' default {}'.format(filed_default)
+                        else:
+                            sql = "alter table {} add {} {}({})".format(table_name, filed_name, filed_type,
+                                                                        filed_length)
+                            if filed_default:
+                                sql = sql + " default '{}'".format(filed_default)
+                        if filed_null == 'NO':
+                            sql = sql + ' not null'
+                        # print(sql)
+                        cursor.execute("use {}".format(schema_name))
+                        cursor.execute(sql)
+                        conn.commit()
+                        cursor.execute("use metadata")
+                        print("成功添加字段")
                 window4.close()
-
             if ev3 == '查看元数据':
                 window3['result'].update('')
                 output = get_filed(cursor)

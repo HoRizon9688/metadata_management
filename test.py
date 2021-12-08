@@ -72,8 +72,22 @@ while True:
                     filed_null,
                     filed_key)
                 print(sql)
-        # cursor.execute("use {}".format(schema_name))
-        # sql = "alter table {} add {} {}()"
-
+        cursor.execute(sql)
+        conn.commit()
+        if filed_length is None or filed_length == '':
+            sql = "alter table {} add {} {}".format(table_name, filed_name, filed_type)
+            if filed_default:
+                sql = sql + ' default {}'.format(filed_default)
+        else:
+            sql = "alter table {} add {} {}({})".format(table_name, filed_name, filed_type, filed_length)
+            if filed_default:
+                sql = sql + " default '{}'".format(filed_default)
+        if filed_null == 'NO':
+            sql = sql + ' not null'
+        print(sql)
+        cursor.execute("use {}".format(schema_name))
+        cursor.execute(sql)
+        conn.commit()
+        cursor.execute("use metadata")
 window.close()
 conn.close()
