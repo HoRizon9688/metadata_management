@@ -38,6 +38,23 @@ def filed_update_name(filed_name, filed_id, conn, cursor):
     conn.commit()
 
 
+def filed_update_type(filed_type, filed_id, conn, cursor):
+    sql = "UPDATE `filed` set type = '{}' where filed_id = {}".format(filed_type, filed_id)
+    cursor.execute(sql)
+    conn.commit()
+
+
+def filed_update_length(filed_length, filed_id, conn, cursor):
+    sql = "UPDATE `filed` set length = {} where filed_id = {}".format(filed_length, filed_id)
+    cursor.execute(sql)
+    conn.commit()
+
+
+def filed_update_null(filed_null, filed_id, conn, cursor):
+    sql = "UPDATE `filed` set `null` = '{}' where filed_id = {}".format(filed_null, filed_id)
+    cursor.execute(sql)
+    conn.commit()
+
 def get_schema(cursor):
     sql = "select * from `schema`"
     cursor.execute(sql)
@@ -187,7 +204,8 @@ while True:
                 if val3['win3_input']:
                     win3_input = val3['win3_input']
                     filed_name, filed_id = win3_input.split(' ')
-                    sql = "select schema_name,table_name,filed_name,type,length,`null` from filed where filed_id = {}".format(filed_id)
+                    sql = "select schema_name,table_name,filed_name,type,length,`null` from filed where filed_id = {}".format(
+                        filed_id)
                     cursor.execute(sql)
                     result = cursor.fetchone()
                     schema_name = result[0]
@@ -210,6 +228,95 @@ while True:
                     conn.commit()
                     cursor.execute("use metadata")
                     print("修改成功")
+            if ev3 == '修改字段类型':
+                window3['result'].update('')
+                if val3['win3_input']:
+                    win3_input = val3['win3_input']
+                    filed_type, filed_id = win3_input.split(' ')
+                    sql = "select schema_name,table_name,filed_name,length,`null` from filed where filed_id = {}".format(
+                        filed_id)
+                    cursor.execute(sql)
+                    result = cursor.fetchone()
+                    schema_name = result[0]
+                    table_name = result[1]
+                    filed_name = result[2]
+                    filed_length = result[3]
+                    null_flag = result[4]
+                    if filed_type == 'int':
+                        sql = "alter table {} change {} {} {}".format(table_name, filed_name, filed_name,
+                                                                      filed_type)
+                    else:
+                        sql = "alter table {} change {} {} {}({})".format(table_name, filed_name, filed_name,
+                                                                          filed_type, filed_length)
+                    if null_flag == 'NO':
+                        sql = sql + " not null"
+                    filed_update_type(filed_type, filed_id, conn, cursor)
+                    cursor.execute("use {}".format(schema_name))
+                    cursor.execute(sql)
+                    conn.commit()
+                    cursor.execute("use metadata")
+                    print("修改成功")
+            if ev3 == '修改字段长度':
+                window3['result'].update('')
+                if val3['win3_input']:
+                    win3_input = val3['win3_input']
+                    filed_length, filed_id = win3_input.split(' ')
+                    sql = "select schema_name,table_name,filed_name,type,`null` from filed where filed_id = {}".format(
+                        filed_id)
+                    cursor.execute(sql)
+                    result = cursor.fetchone()
+                    schema_name = result[0]
+                    table_name = result[1]
+                    filed_name = result[2]
+                    filed_type = result[3]
+                    null_flag = result[4]
+                    if filed_type == 'int':
+                        print("int类型无法修改字段长度")
+                    else:
+                        sql = "alter table {} change {} {} {}({})".format(table_name, filed_name, filed_name,
+                                                                          filed_type, filed_length)
+                        if null_flag == 'NO':
+                            sql = sql + " not null"
+                        filed_update_length(filed_length, filed_id, conn, cursor)
+                        cursor.execute("use {}".format(schema_name))
+                        cursor.execute(sql)
+                        conn.commit()
+                        cursor.execute("use metadata")
+                        print("修改成功")
+            if ev3 == '修改非空属性':
+                window3['result'].update('')
+                if val3['win3_input']:
+                    win3_input = val3['win3_input']
+                    filed_null, filed_id = win3_input.split(' ')
+                    filed_null = filed_null.upper()
+                    sql = "select schema_name,table_name,filed_name,type,length from filed where filed_id = {}".format(
+                        filed_id)
+                    cursor.execute(sql)
+                    result = cursor.fetchone()
+                    schema_name = result[0]
+                    table_name = result[1]
+                    filed_name = result[2]
+                    filed_type = result[3]
+                    filed_length = result[4]
+                    if filed_length is None:
+                        sql = "alter table {} change {} {} {}".format(table_name, filed_name, filed_name,
+                                                                      filed_type)
+                    else:
+                        sql = "alter table {} change {} {} {}({})".format(table_name, filed_name, filed_name,
+                                                                          filed_type, filed_length)
+                    if filed_null == 'NO':
+                        sql = sql + " not null"
+                    print(sql)
+                    filed_update_null(filed_null, filed_id, conn, cursor)
+                    cursor.execute("use {}".format(schema_name))
+                    cursor.execute(sql)
+                    conn.commit()
+                    cursor.execute("use metadata")
+                    print("修改成功")
+            if ev3 == '修改键类型':
+                window3['result'].update('')
+                if val3['win3_input']:
+                    win3_input = val3['win3_input']
 
             if ev3 == '查看元数据':
                 window3['result'].update('')
