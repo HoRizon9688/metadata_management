@@ -1,3 +1,4 @@
+import PySimpleGUI as sg
 import pymysql
 
 conn = pymysql.connect(host='localhost',
@@ -6,18 +7,73 @@ conn = pymysql.connect(host='localhost',
                        database='metadata')
 cursor = conn.cursor()
 
-def get_schema(cursor):
-    sql = "select * from `schema`"
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    return result
+layout = [
+    [sg.Text('Please enter filed_name, schema_name, table_name, type, length, null, default', key="tip")],
+    [sg.Text('filed_name', size=(15, 1)), sg.InputText(key='filed_name'), sg.Text('*', text_color='#FF6755', font=20)],
+    [sg.Text('schema_name', size=(15, 1)), sg.InputText(key='schema_name'),
+     sg.Text('*', text_color='#FF6755', font=20)],
+    [sg.Text('table_name', size=(15, 1)), sg.InputText(key='table_name'), sg.Text('*', text_color='#FF6755', font=20)],
+    [sg.Text('filed_type', size=(15, 1)), sg.InputText(key='filed_type'), sg.Text('*', text_color='#FF6755', font=20)],
+    [sg.Text('filed_length', size=(15, 1)), sg.InputText(key='filed_length')],
+    [sg.Text('field_null', size=(15, 1)), sg.InputText(key='filed_null'), sg.Text('*', text_color='#FF6755', font=20)],
+    [sg.Text('filed_key', size=(15, 1)), sg.InputText(key='filed_key')],
+    [sg.Text('filed_default', size=(15, 1)), sg.InputText(key='filed_default')],
+    [sg.Submit(), sg.Cancel()]
+]
 
-output = get_schema(cursor)
-print(output)
+window = sg.Window('Simple data entry window', layout)
 
-charset = input()
-sql = "UPDATE `schema` set character_set='{}'".format(charset)
-cursor.execute(sql)
-conn.commit()
-output = get_schema(cursor)
-print(output)
+while True:
+    event, values = window.read()
+    if event == sg.WINDOW_CLOSED or event == 'Cancel':
+        break
+    if event == 'Submit':
+        filed_name = values['filed_name']
+        schema_name = values['schema_name']
+        table_name = values['table_name']
+        filed_type = values['filed_type']
+        filed_length = values['filed_length']
+        filed_null = values['filed_null'].upper()
+        filed_key = values['filed_key']
+        filed_default = values['filed_default']
+        cursor.execute("select max(filed_id) from filed")
+        temp = cursor.fetchone()
+        filed_id = int(temp[0]) + 1
+        if filed_length:
+            sql = "insert into `filed` values ({0},'{1}','{2}','{3}','{4}',{5},'{6}','{7}','{8}')".format(filed_id,
+                                                                                                          filed_name,
+                                                                                                          schema_name,
+                                                                                                          table_name,
+                                                                                                          filed_type,
+                                                                                                          filed_length,
+                                                                                                          filed_null,
+                                                                                                          filed_key,
+                                                                                                          filed_default)
+            print(sql)
+        else:
+            if filed_default:
+                sql = "insert into `filed` (filed_id, filed_name, schema_name, table_name, `type`, `null`, `key`, `default`) values ({},'{}','{}','{}','{}','{}','{}',{})".format(
+                    filed_id,
+                    filed_name,
+                    schema_name,
+                    table_name,
+                    filed_type,
+                    filed_null,
+                    filed_key,
+                    filed_default)
+                print(sql)
+            else:
+                sql = "insert into `filed` (filed_id, filed_name, schema_name, table_name, `type`, `null`, `key`) values ({},'{}','{}','{}','{}','{}','{}')".format(
+                    filed_id,
+                    filed_name,
+                    schema_name,
+                    table_name,
+                    filed_type,
+                    filed_null,
+                    filed_key)
+                print(sql)
+        # cursor.execute("use {}".format(schema_name))
+        # sql = "alter table {} add {} {}()"
+
+window.close()
+conn.close()

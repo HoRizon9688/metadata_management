@@ -91,12 +91,12 @@ def create_schema(db_name, charset, collation, conn, cursor):
 
 
 layout = [[sg.Button('Function1'), sg.Button('Function2'), sg.Button('Function3')]]
-window = sg.Window('Window Title', layout)
+window = sg.Window('Window Title', layout, enable_close_attempted_event=True)
 
 while True:
     event, values = window.read()
     # See if user wants to quit or window was closed
-    if event == sg.WINDOW_CLOSED:
+    if event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT and sg.popup_yes_no('Do you really want to exit?') == 'Yes':
         break
     # Output a message to the window
     if event == 'Function1':
@@ -201,7 +201,7 @@ while True:
                     sg.Button('修改默认值')],
                    [sg.Button('查看元数据'), sg.Button('新建字段'), sg.Button('新建表')],
                    [sg.Output(key='result', size=(200, 400))]]
-        window3 = sg.Window('Window2', layout3, size=(600, 600))
+        window3 = sg.Window('Window3', layout3, size=(600, 600))
         while True:
             ev3, val3 = window3.read()
             if ev3 == sg.WINDOW_CLOSED:
@@ -221,7 +221,7 @@ while True:
                     filed_type = result[3]
                     filed_length = result[4]
                     null_flag = result[5]
-                    if filed_length is None:
+                    if filed_length is None or filed_length == '':
                         sql = "alter table {} change {} {} {}".format(table_name, old_filed_name, filed_name,
                                                                       filed_type)
                     else:
@@ -305,7 +305,7 @@ while True:
                     filed_name = result[2]
                     filed_type = result[3]
                     filed_length = result[4]
-                    if filed_length is None:
+                    if filed_length is None or filed_length == '':
                         sql = "alter table {} change {} {} {}".format(table_name, filed_name, filed_name,
                                                                       filed_type)
                     else:
@@ -351,6 +351,80 @@ while True:
                     conn.commit()
                     cursor.execute("use metadata")
                     print("修改成功")
+            if ev3 == '新建字段':
+                layout = [
+                    [sg.Text('Please enter filed_name, schema_name, table_name, type, length, null, default',
+                             key="tip")],
+                    [sg.Text('filed_name', size=(15, 1)), sg.InputText(key='filed_name'),
+                     sg.Text('*', text_color='#FF6755', font=20)],
+                    [sg.Text('schema_name', size=(15, 1)), sg.InputText(key='schema_name'),
+                     sg.Text('*', text_color='#FF6755', font=20)],
+                    [sg.Text('table_name', size=(15, 1)), sg.InputText(key='table_name'),
+                     sg.Text('*', text_color='#FF6755', font=20)],
+                    [sg.Text('filed_type', size=(15, 1)), sg.InputText(key='filed_type'),
+                     sg.Text('*', text_color='#FF6755', font=20)],
+                    [sg.Text('filed_length', size=(15, 1)), sg.InputText(key='filed_length')],
+                    [sg.Text('field_null', size=(15, 1)), sg.InputText(key='filed_null'),
+                     sg.Text('*', text_color='#FF6755', font=20)],
+                    [sg.Text('filed_key', size=(15, 1)), sg.InputText(key='filed_key')],
+                    [sg.Text('filed_default', size=(15, 1)), sg.InputText(key='filed_default')],
+                    [sg.Submit(), sg.Cancel()]
+                ]
+                window4 = sg.Window('window4', layout)
+                while True:
+                    ev4, val4 = window4.read()
+                    if ev4 == sg.WINDOW_CLOSED or ev4 == 'Cancel':
+                        break
+                    if ev4 == 'Submit':
+                        window3['result'].update('')
+                        filed_name = val4['filed_name']
+                        schema_name = val4['schema_name']
+                        table_name = val4['table_name']
+                        filed_type = val4['filed_type']
+                        filed_length = val4['filed_length']
+                        filed_null = val4['filed_null'].upper()
+                        filed_key = val4['filed_key']
+                        filed_default = val4['filed_default']
+                        cursor.execute("select max(filed_id) from filed")
+                        temp = cursor.fetchone()
+                        filed_id = int(temp[0]) + 1
+                        if filed_length:
+                            sql = "insert into `filed` values ({0},'{1}','{2}','{3}','{4}',{5},'{6}','{7}','{8}')".format(
+                                filed_id,
+                                filed_name,
+                                schema_name,
+                                table_name,
+                                filed_type,
+                                filed_length,
+                                filed_null,
+                                filed_key,
+                                filed_default)
+                            print(sql)
+                        else:
+                            if filed_default:
+                                sql = "insert into `filed` (filed_id, filed_name, schema_name, table_name, `type`, `null`, `key`, `default`) values ({},'{}','{}','{}','{}','{}','{}',{})".format(
+                                    filed_id,
+                                    filed_name,
+                                    schema_name,
+                                    table_name,
+                                    filed_type,
+                                    filed_null,
+                                    filed_key,
+                                    filed_default)
+                                print(sql)
+                            else:
+                                sql = "insert into `filed` (filed_id, filed_name, schema_name, table_name, `type`, `null`, `key`) values ({},'{}','{}','{}','{}','{}','{}')".format(
+                                    filed_id,
+                                    filed_name,
+                                    schema_name,
+                                    table_name,
+                                    filed_type,
+                                    filed_null,
+                                    filed_key)
+                                print(sql)
+
+                window4.close()
+
             if ev3 == '查看元数据':
                 window3['result'].update('')
                 output = get_filed(cursor)
