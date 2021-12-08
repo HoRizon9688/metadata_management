@@ -385,6 +385,12 @@ while True:
                         filed_null = val4['filed_null'].upper()
                         filed_key = val4['filed_key']
                         filed_default = val4['filed_default']
+                        table_name_list = []
+                        cursor.execute("SELECT DISTINCT table_name from filed")
+                        result = cursor.fetchall()
+                        for i in result:
+                            table_name_list.append(i[0])
+                        print(table_name_list)
                         cursor.execute("select max(filed_id) from filed")
                         temp = cursor.fetchone()
                         filed_id = int(temp[0]) + 1
@@ -424,23 +430,47 @@ while True:
                                 # print(sql)
                         cursor.execute(sql)
                         conn.commit()
-                        if filed_length is None or filed_length == '':
-                            sql = "alter table {} add {} {}".format(table_name, filed_name, filed_type)
-                            if filed_default:
-                                sql = sql + ' default {}'.format(filed_default)
+                        if table_name not in table_name_list:
+                            print("table doesn't exist, try to create it")
+                            if filed_length is None or filed_length == '':
+                                sql = "create table {} ({} {}".format(table_name, filed_name, filed_type)
+                                if filed_default:
+                                    sql = sql + ' default {}'.format(filed_default)
+                                if filed_null == 'NO':
+                                    sql = sql + ' not null'
+                            else:
+                                sql = "create table {} ({} {}({})".format(table_name, filed_name, filed_type,
+                                                                          filed_length)
+                                if filed_default:
+                                    sql = sql + " default '{}'".format(filed_default)
+                                if filed_null == 'NO':
+                                    sql = sql + ' not null'
+                            sql = sql + ")"
+                            print(sql)
+                            cursor.execute("use {}".format(schema_name))
+                            cursor.execute(sql)
+                            conn.commit()
+                            cursor.execute("use metadata")
+                            print("新建表并成功添加字段")
                         else:
-                            sql = "alter table {} add {} {}({})".format(table_name, filed_name, filed_type,
-                                                                        filed_length)
-                            if filed_default:
-                                sql = sql + " default '{}'".format(filed_default)
-                        if filed_null == 'NO':
-                            sql = sql + ' not null'
-                        # print(sql)
-                        cursor.execute("use {}".format(schema_name))
-                        cursor.execute(sql)
-                        conn.commit()
-                        cursor.execute("use metadata")
-                        print("成功添加字段")
+                            print("table has found")
+                            if filed_length is None or filed_length == '':
+                                sql = "alter table {} add {} {}".format(table_name, filed_name, filed_type)
+                                if filed_default:
+                                    sql = sql + ' default {}'.format(filed_default)
+                            else:
+                                sql = "alter table {} add {} {}({})".format(table_name, filed_name, filed_type,
+                                                                            filed_length)
+                                if filed_default:
+                                    sql = sql + " default '{}'".format(filed_default)
+                            if filed_null == 'NO':
+                                sql = sql + ' not null'
+                            print(sql)
+                            cursor.execute("use {}".format(schema_name))
+                            cursor.execute(sql)
+                            conn.commit()
+                            cursor.execute("use metadata")
+                            print("添加字段成功")
                 window4.close()
             if ev3 == '查看元数据':
                 window3['result'].update('')
@@ -449,7 +479,5 @@ while True:
                     "filed_id     filed_name     schema_name     table_name     type     length     null     key     default")
                 for i in output:
                     print(i)
-
-# Finish up by removing from the screen
 window.close()
 conn.close()
