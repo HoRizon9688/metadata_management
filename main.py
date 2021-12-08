@@ -55,6 +55,13 @@ def filed_update_null(filed_null, filed_id, conn, cursor):
     cursor.execute(sql)
     conn.commit()
 
+
+def filed_update_default(filed_default, filed_id, conn, cursor):
+    sql = "UPDATE `filed` set `default`  = '{}' where filed_id = {}".format(filed_default, filed_id)
+    cursor.execute(sql)
+    conn.commit()
+
+
 def get_schema(cursor):
     sql = "select * from `schema`"
     cursor.execute(sql)
@@ -191,7 +198,7 @@ while True:
     if event == 'Function3':
         layout3 = [[sg.Input(key='win3_input')],
                    [sg.Button('修改字段名'), sg.Button('修改字段类型'), sg.Button('修改字段长度'), sg.Button('修改非空属性'),
-                    sg.Button('修改键类型'), sg.Button('修改默认值')],
+                    sg.Button('修改默认值')],
                    [sg.Button('查看元数据'), sg.Button('新建字段'), sg.Button('新建表')],
                    [sg.Output(key='result', size=(200, 400))]]
         window3 = sg.Window('Window2', layout3, size=(600, 600))
@@ -313,11 +320,37 @@ while True:
                     conn.commit()
                     cursor.execute("use metadata")
                     print("修改成功")
-            if ev3 == '修改键类型':
+            if ev3 == '修改默认值':
                 window3['result'].update('')
                 if val3['win3_input']:
                     win3_input = val3['win3_input']
-
+                    filed_default, filed_id = win3_input.split(' ')
+                    sql = "select schema_name,table_name,filed_name,type,length,`null` from filed where filed_id = {}".format(
+                        filed_id)
+                    cursor.execute(sql)
+                    result = cursor.fetchone()
+                    schema_name = result[0]
+                    table_name = result[1]
+                    filed_name = result[2]
+                    filed_type = result[3]
+                    filed_length = result[4]
+                    null_flag = result[5]
+                    if filed_type == 'int':
+                        sql = "alter table {} modify column {} {}".format(table_name, filed_name, filed_type)
+                        if null_flag == 'NO':
+                            sql = sql + " not null "
+                        sql = sql + "default {}".format(filed_default)
+                    else:
+                        sql = "alter table {} modify column {} {}({})".format(table_name, filed_name, filed_type, filed_length)
+                        if null_flag == 'NO':
+                            sql = sql + " not null "
+                        sql = sql + "default '{}'".format(filed_default)
+                    filed_update_default(filed_default, filed_id, conn, cursor)
+                    cursor.execute("use {}".format(schema_name))
+                    cursor.execute(sql)
+                    conn.commit()
+                    cursor.execute("use metadata")
+                    print("修改成功")
             if ev3 == '查看元数据':
                 window3['result'].update('')
                 output = get_filed(cursor)
