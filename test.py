@@ -72,22 +72,46 @@ while True:
                     filed_null,
                     filed_key)
                 print(sql)
-        cursor.execute(sql)
-        conn.commit()
-        if filed_length is None or filed_length == '':
-            sql = "alter table {} add {} {}".format(table_name, filed_name, filed_type)
-            if filed_default:
-                sql = sql + ' default {}'.format(filed_default)
+        # cursor.execute(sql)
+        # conn.commit()
+        cursor.execute("SELECT DISTINCT table_name from filed")
+        temp = cursor.fetchall()
+        table_name_list = []
+        for i in temp:
+            table_name_list.append(i[0])
+        if table_name not in table_name_list:
+            print("table doesn't exist, try to create it")
+            if filed_length is None or filed_length == '':
+                sql = "create table {} ({} {}".format(table_name, filed_name, filed_type)
+                if filed_default:
+                    sql = sql + ' default {}'.format(filed_default)
+                if filed_null == 'NO':
+                    sql = sql + ' not null'
+            else:
+                sql = "create table {} ({} {}({})".format(table_name, filed_name, filed_type, filed_length)
+                if filed_default:
+                    sql = sql + " default '{}'".format(filed_default)
+                if filed_null == 'NO':
+                    sql = sql + ' not null'
+            sql = sql + ")"
+            print(sql)
         else:
-            sql = "alter table {} add {} {}({})".format(table_name, filed_name, filed_type, filed_length)
-            if filed_default:
-                sql = sql + " default '{}'".format(filed_default)
-        if filed_null == 'NO':
-            sql = sql + ' not null'
-        print(sql)
-        cursor.execute("use {}".format(schema_name))
-        cursor.execute(sql)
-        conn.commit()
-        cursor.execute("use metadata")
+            print("ok")
+
+        # if filed_length is None or filed_length == '':
+        #     sql = "alter table {} add {} {}".format(table_name, filed_name, filed_type)
+        #     if filed_default:
+        #         sql = sql + ' default {}'.format(filed_default)
+        # else:
+        #     sql = "alter table {} add {} {}({})".format(table_name, filed_name, filed_type, filed_length)
+        #     if filed_default:
+        #         sql = sql + " default '{}'".format(filed_default)
+        # if filed_null == 'NO':
+        #     sql = sql + ' not null'
+        # print(sql)
+        # cursor.execute("use {}".format(schema_name))
+        # cursor.execute(sql)
+        # conn.commit()
+        # cursor.execute("use metadata")
 window.close()
 conn.close()

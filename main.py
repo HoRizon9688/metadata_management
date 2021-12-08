@@ -199,7 +199,7 @@ while True:
         layout3 = [[sg.Input(key='win3_input')],
                    [sg.Button('修改字段名'), sg.Button('修改字段类型'), sg.Button('修改字段长度'), sg.Button('修改非空属性'),
                     sg.Button('修改默认值')],
-                   [sg.Button('查看元数据'), sg.Button('新建字段'), sg.Button('新建表')],
+                   [sg.Button('查看元数据'), sg.Button('新建字段')],
                    [sg.Output(key='result', size=(200, 400))]]
         window3 = sg.Window('Window3', layout3, size=(600, 600))
         while True:
